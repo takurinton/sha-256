@@ -91,7 +91,9 @@ fn compute(message: Vec<u32>) -> [u32; 8] {
                 | (chunk[t * 4 + 3] as u32);
         }
         for t in 16..64 {
-            W[t] = sigma1(W[t - 2]) + W[t - 7] + sigma0(W[t - 15]) + W[t - 16];
+            let s0 = sigma0(W[t - 15]);
+            let s1 = sigma1(W[t - 2]);
+            W[t] = W[t - 16].wrapping_add(s0).wrapping_add(W[t - 7]).wrapping_add(s1);
         }
 
         let mut a = H[0];
@@ -104,10 +106,15 @@ fn compute(message: Vec<u32>) -> [u32; 8] {
         let mut h = H[7];
 
         for j in 0..64 {
+            let s1 = Sigma1(e);
+            let ch = Ch(e, f, g);
             #[allow(non_snake_case)]
-            let T1 = (h + Sigma1(e) + Ch(e, f, g) + K[j] + W[j]) & 0xffffffff;
+            let T1 = h.wrapping_add(s1).wrapping_add(ch).wrapping_add(K[j]).wrapping_add(W[j]);
+            
+            let s0 = Sigma0(a);
+            let maj = Maj(a, b, c);
             #[allow(non_snake_case)]
-            let T2 = (Sigma0(a) + Maj(a, b, c)) & 0xffffffff;
+            let T2 = s0.wrapping_add(maj);
 
             h = g;
             g = f;
@@ -119,14 +126,14 @@ fn compute(message: Vec<u32>) -> [u32; 8] {
             a = T1.wrapping_add(T2) & 0xffffffff;
         }
 
-        H[0] = (H[0] + a) & 0xffffffff;
-        H[1] = (H[1] + b) & 0xffffffff;
-        H[2] = (H[2] + c) & 0xffffffff;
-        H[3] = (H[3] + d) & 0xffffffff;
-        H[4] = (H[4] + e) & 0xffffffff;
-        H[5] = (H[5] + f) & 0xffffffff;
-        H[6] = (H[6] + g) & 0xffffffff;
-        H[7] = (H[7] + h) & 0xffffffff;
+        H[0] = a.wrapping_add(H[0]) & 0xffffffff;
+        H[1] = b.wrapping_add(H[1]) & 0xffffffff;
+        H[2] = c.wrapping_add(H[2]) & 0xffffffff;
+        H[3] = d.wrapping_add(H[3]) & 0xffffffff;
+        H[4] = e.wrapping_add(H[4]) & 0xffffffff;
+        H[5] = f.wrapping_add(H[5]) & 0xffffffff;
+        H[6] = g.wrapping_add(H[6]) & 0xffffffff;
+        H[7] = h.wrapping_add(H[7]) & 0xffffffff;
     }
 
     H
