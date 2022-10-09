@@ -140,12 +140,39 @@ fn to_hex(bytes: &[u32]) -> String {
     s
 }
 
-fn main() {
-    let input = b"takurinton";
-    let padded = padding(input);
-    let hex = compute(padded);
-    let bin = to_hex(&hex);
-    // expect: c04bdbc0411b0f0fffcc8147ba10411f334da5d6c5bb8e6db9358c5f14aeb0cc
-    println!("{}", bin);
+fn gen_sha256(message: &[u8]) -> String {
+    let padded = padding(message);
+    let hash = compute(padded);
+    to_hex(&hash)
 }
 
+fn main() {
+    let input = b"takurinton";
+    let hash = gen_sha256(input);
+    println!("{}", hash);
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_sha256() {
+        let input = b"I am cat";
+        let hash = super::gen_sha256(input);
+        assert_eq!(hash, "ceea28c684b27bfee58513a3b81a4310e43db5ab54b39fcfd7b42d7a3999aa25");
+    }
+
+    #[test]
+    fn test_sha256_number() {
+        let input = b"111111";
+        let hash = super::gen_sha256(input);
+        assert_eq!(hash, "bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a");
+    }
+
+    #[test]
+    fn test_sha256_japanese() {
+        let message = "寿司";
+        let input = message.as_bytes();
+        let hash = super::gen_sha256(input);
+        assert_eq!(hash, "b66b04c2509a7c34f658312d5ff1258eacc8cae4c43c63e7af815b9d22928a");
+    }
+}
